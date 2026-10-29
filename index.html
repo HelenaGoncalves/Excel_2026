@@ -1,10 +1,12 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!doctype html>
 <html lang="pt-PT">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Quiz de Fórmulas Excel</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
@@ -111,8 +113,13 @@ select{font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1p
 .final .grande{font-family:var(--f-disp);font-weight:800;font-size:72px;line-height:1;color:var(--vinho);font-variant-numeric:tabular-nums}
 .lista-temas{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;width:100%}
 .lista-temas div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;justify-content:space-between;gap:8px}
+.sala{display:flex;gap:20px;align-items:center;flex-wrap:wrap;background:var(--surface);border:2px solid var(--vinho);border-radius:16px;padding:16px}
+.sala img{border-radius:8px;background:#fff;padding:6px;max-width:100%;height:auto}
+.sala-txt{display:flex;flex-direction:column;gap:10px;min-width:0;flex:1}
+.codigo small{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.codigo b{font-family:var(--f-mono);font-size:clamp(44px,7vw,72px);letter-spacing:.12em;color:var(--vinho);line-height:1}
+.sala .link{font-size:14px;word-break:break-all}
 </style>
-<style>body{margin:0}</style>
 </head>
 <body>
 
@@ -532,23 +539,53 @@ let db=null, user=null, meuId=null, podeApresentar=true;
 let estado = {ronda:"local", qid:Q[0].id, fase:"votar", pos:1, total:Q.length, nivel:"0", tipo:"0"}; // fase: votar | resultados | resposta
 let votos = {};          // id → {ronda, r:{qid:op}}
 let meuVoto = {ronda:null, r:{}};
+try{ const v = JSON.parse(localStorage.getItem("quiz-voto")||"null"); if(v && v.r) meuVoto = v; }catch(e){}
 let aoVivo = false;
+try{ const e = JSON.parse(localStorage.getItem("quiz-estado-prof")||"null"); if(e && e.qid) estado = {...estado, ...e}; }catch(e){}
 
-async function liga(){
-  try{
-    db = await claude.use("db"); user = await claude.use("user");
-    if(!db) return render();
-    meuId = user ? await user.id() : null;
-    podeApresentar = user ? await user.canEdit() : false;
-    aoVivo = true;
-    db.doc("sessao/estado").onSnapshot(s=>{ if(s.exists){ estado = {...estado, ...s.data()}; } render(); }, ()=>{aoVivo=false;render();});
-    db.collection("votos").onSnapshot(s=>{ votos={}; s.docs.forEach(d=>{ votos[d.id]=d.data(); }); if(meuId && votos[meuId]) meuVoto = votos[meuId]; render(); }, ()=>{});
-  }catch(e){ aoVivo=false; render(); }
+
+const BROKER = "wss://broker.hivemq.com:8884/mqtt";
+const PREFIXO = "isla-aig/quiz-formulas/v1/";
+const guarda = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} } };
+let recebeuEstado = false, cliente = null, sala = null, estadoLigacao = "desligado"; // desligado | a-ligar | ligado | erro
+meuId = guarda.get("quiz-id") || ("a" + Math.random().toString(36).slice(2,10)); guarda.set("quiz-id", meuId);
+function novaSala(){ return String(1000 + Math.floor(Math.random()*9000)); }
+function salaDoLink(){ const m = location.search.match(/[?&]sala=(\d{4})/); return m ? m[1] : null; }
+function topico(t){ return PREFIXO + sala + "/" + t; }
+function liga(){
+  if(typeof mqtt === "undefined"){ estadoLigacao = "erro"; return render(); }
+  const v = vista();
+  if(v === "apresentar"){ sala = guarda.get("quiz-sala-prof") || novaSala(); guarda.set("quiz-sala-prof", sala); }
+  else { sala = salaDoLink() || guarda.get("quiz-sala-aluno"); if(sala) guarda.set("quiz-sala-aluno", sala); }
+  if(!sala){ render(); return; }
+  if(cliente){ try{ cliente.end(true); }catch(e){} }
+  votos = {}; recebeuEstado = false; estadoLigacao = "a-ligar"; render();
+  cliente = mqtt.connect(BROKER, { clientId: "quiz_" + meuId + "_" + Math.random().toString(36).slice(2,6), reconnectPeriod: 3000, connectTimeout: 8000, clean: true });
+  cliente.on("connect", ()=>{
+    estadoLigacao = "ligado"; aoVivo = true;
+    cliente.subscribe(topico("estado"));
+    if(vista() === "apresentar"){ cliente.subscribe(topico("votos/+")); publicaEstado(); }
+    render();
+  });
+  cliente.on("reconnect", ()=>{ estadoLigacao = "a-ligar"; render(); });
+  cliente.on("offline", ()=>{ estadoLigacao = "a-ligar"; render(); });
+  cliente.on("error", ()=>{ estadoLigacao = "erro"; render(); });
+  cliente.on("message", (t, buf)=>{
+    let d; try{ d = JSON.parse(buf.toString()); }catch(e){ return; }
+    if(!d || typeof d !== "object") return;
+    if(t === topico("estado")){
+      if(vista() !== "apresentar" && typeof d.qid === "string"){ estado = {...estado, ...d}; recebeuEstado = true; render(); }
+    } else if(t.startsWith(topico("votos/"))){
+      const id = t.split("/").pop();
+      if(typeof d.ronda === "string" && d.r && typeof d.r === "object"){ votos[id] = d; render(); }
+    }
+  });
 }
-async function gravaEstado(novo){
-  estado = {...estado, ...novo}; render();
-  if(aoVivo && podeApresentar){ try{ await db.doc("sessao/estado").set(estado); }catch(e){ mostraAviso("Não foi possível atualizar o ecrã dos alunos. Verifica se tens permissão de edição."); } }
+function publicaEstado(){
+  if(cliente && estadoLigacao === "ligado") cliente.publish(topico("estado"), JSON.stringify(estado), { qos: 1, retain: true });
 }
+function gravaEstado(novo){ estado = {...estado, ...novo}; guarda.set("quiz-estado-prof", JSON.stringify(estado)); render(); if(vista() === "apresentar") publicaEstado(); }
+function entraSala(cod){ sala = cod; guarda.set("quiz-sala-aluno", cod); liga(); }
 function contagens(qid){
   const c=[0,0,0,0];
   Object.values(votos).forEach(v=>{ if(v && v.ronda===estado.ronda && v.r && v.r[qid]!==undefined) c[v.r[qid]]++; });
@@ -569,15 +606,16 @@ function vInicio(){
       <a class="modo" href="#responder"><span class="tag">Alunos · telemóvel</span><h2>Responder</h2><p>Abre o mesmo link e toca na opção. A pergunta muda sozinha quando o professor avança.</p></a>
       <a class="modo" href="#estudar"><span class="tag">Treino</span><h2>Estudar sozinho</h2><p>Responde ao teu ritmo e vê logo se acertaste. No fim, vês a tua pontuação por tema.</p></a>
     </div>
-    ${aoVivo ? "" : `<p class="aviso">A votação ao vivo não está ligada nesta vista. Podes apresentar à mesma e os alunos respondem de braço no ar (A, B, C ou D), ou usar o modo Estudar sozinho.</p>`}
+    <p class="aviso">Votação ao vivo: o professor abre <b>Apresentar</b> e aparece um código de sala com QR code. Os alunos leem o QR ou abrem <b>Responder</b> e escrevem o código. Não é preciso criar conta.</p>
   </section>`;
 }
 function vApresentar(){
-  if(aoVivo && !podeApresentar) return `<div class="vazio"><h2>Só o professor pode apresentar</h2><p class="lead">Escolhe <a href="#responder">Responder</a> para participar.</p></div>`;
+
   const L = lista(estado.nivel, estado.tipo); let i = L.findIndex(q=>q.id===estado.qid); if(i<0) i=0;
   const q = L[i]; const cont = aoVivo ? contagens(q.id) : null; const tot = cont? cont.reduce((a,b)=>a+b,0):0;
   const mostrarRes = estado.fase!=="votar";
   return `<section style="display:flex;flex-direction:column;gap:18px">
+    ${painelSala()}
     ${cabecalho(q,i+1,L.length)}
     <div class="slide">
       <div class="perg"><h2>${texto(q.p)}</h2>${folha(q)}</div>
@@ -599,12 +637,35 @@ function vApresentar(){
         ${aoVivo ? `<span class="conta" title="Respostas recebidas">${tot}</span><span style="color:var(--muted);font-size:15px">respostas</span>
           <button class="btn" id="res" ${estado.fase!=="votar"?'disabled':''}>Mostrar resultados</button>` : `<span style="color:var(--muted);font-size:15px">Votação de braço no ar</span>`}
         <button class="btn prim" id="rev" ${estado.fase==="resposta"?'disabled':''}>Revelar resposta</button>
-        ${aoVivo ? `<button class="btn" id="nova" title="Apaga as respostas da sessão anterior do ecrã">Nova sessão</button>`:""}
+        ${aoVivo ? `<button class="btn" id="nova" title="Começa do zero com as mesmas perguntas">Nova sessão</button>`:""}
       </div>
     </div>
   </section>`;
 }
+let qrURL = null, qrPara = null, painelAberto = true;
+function linkAluno(){ return location.origin + location.pathname + "?sala=" + sala + "#responder"; }
+function painelSala(){
+  if(!sala) return "";
+  const est = estadoLigacao==="ligado" ? `<span class="chip nivel1">Ligado</span>` : estadoLigacao==="erro" ? `<span class="chip nivel3">Sem ligação</span>` : `<span class="chip nivel2">A ligar…</span>`;
+  if(!painelAberto) return `<div class="barra">${est}<span>Sala <b class="conta">${esc(sala)}</b></span><button class="btn" id="vepainel">Mostrar código e QR</button></div>`;
+  if(typeof QRCode !== "undefined" && qrPara !== linkAluno()){
+    try{ const t = document.createElement("div"); new QRCode(t, {text: linkAluno(), width: 360, height: 360, correctLevel: QRCode.CorrectLevel.M});
+      const c = t.querySelector("canvas"); qrURL = c ? c.toDataURL() : (t.querySelector("img")||{}).src; qrPara = linkAluno(); }catch(e){ qrURL = null; }
+  }
+  return `<div class="sala">
+    ${qrURL ? `<img src="${qrURL}" alt="QR code para entrar na sala" width="180" height="180">` : ""}
+    <div class="sala-txt">
+      <div class="barra">${est}<span>Alunos: abram no telemóvel</span></div>
+      <div class="codigo"><small>Código da sala</small><b>${esc(sala)}</b></div>
+      <code class="link">${esc(linkAluno())}</code>
+      <div class="grupo"><button class="btn" id="copia">Copiar link</button><button class="btn" id="fechapainel">Esconder</button></div>
+    </div></div>`;
+}
 function ligaApresentar(){
+  const bb = id=>document.getElementById(id);
+  if(bb("vepainel")) bb("vepainel").onclick = ()=>{ painelAberto = true; render(); };
+  if(bb("fechapainel")) bb("fechapainel").onclick = ()=>{ painelAberto = false; render(); };
+  if(bb("copia")) bb("copia").onclick = async ()=>{ try{ await navigator.clipboard.writeText(linkAluno()); bb("copia").textContent = "Copiado"; }catch(e){ const r = document.createRange(); r.selectNodeContents(document.querySelector(".sala .link")); getSelection().removeAllRanges(); getSelection().addRange(r); } };
   const L = lista(estado.nivel, estado.tipo); let i = Math.max(0,L.findIndex(q=>q.id===estado.qid));
   const vai = j => gravaEstado({qid:L[j].id, fase:"votar", pos:j+1, total:L.length});
   const sel = document.getElementById("nivel"); if(sel){ sel.value = estado.nivel;
@@ -627,8 +688,14 @@ document.addEventListener("keydown",e=>{
 
 let enviando=false;
 function vResponder(){
-  if(!aoVivo) return `<div class="vazio"><div class="relogio">A · B · C · D</div><h2>Votação ao vivo indisponível</h2>
-    <p class="lead">Nesta vista não é possível enviar respostas. Responde de braço no ar ou treina no modo <a href="#estudar">Estudar sozinho</a>.</p></div>`;
+  if(!sala) return `<form class="vazio" id="fsala"><div class="relogio">A · B · C · D</div><h2>Entra na sala</h2>
+    <p class="lead">Escreve o código de 4 números que está no ecrã do professor.</p>
+    <input id="csala" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" aria-label="Código da sala" placeholder="0000"
+      style="font:700 40px var(--f-mono);letter-spacing:.3em;text-align:center;width:6.5em;padding:8px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink)">
+    <button class="btn prim" type="submit">Entrar</button></form>`;
+  if(estadoLigacao === "erro") return `<div class="vazio"><h2>Não foi possível ligar</h2><p class="lead">Verifica a internet e recarrega a página. A rede da escola pode estar a bloquear a ligação.</p></div>`;
+  if(!aoVivo || estadoLigacao !== "ligado" && !recebeuEstado) return `<div class="vazio"><div class="relogio">· · ·</div><h2>A entrar na sala ${esc(sala)}…</h2></div>`;
+  if(!recebeuEstado) return `<div class="vazio"><div class="relogio">Sala ${esc(sala)}</div><h2>Já estás dentro</h2><p class="lead">À espera que o professor comece. A pergunta aparece aqui sozinha.</p></div>`;
   const q = Q.find(x=>x.id===estado.qid) || Q[0];
   const minha = meuVoto.ronda===estado.ronda ? meuVoto.r?.[q.id] : undefined;
   const revelar = estado.fase==="resposta";
@@ -636,18 +703,21 @@ function vResponder(){
     ${cabecalho(q,estado.pos||1,estado.total||Q.length)}
     <div class="perg"><h2>${texto(q.p)}</h2>${folha(q)}</div>
     ${opcoes(q,{modo:'votar', escolha: minha===undefined?null:minha, revelar})}
+    <p style="margin:0;font-size:14px;color:var(--muted)">Sala ${esc(sala)} · <a href="#" id="sairsala">mudar de sala</a></p>
     ${revelar ? explicacao(q, minha===undefined?null:minha) :
       `<p class="aviso">${minha===undefined ? "Toca numa opção para responder." : "Resposta enviada: <b>"+LETRAS[minha]+"</b>. Podes mudar até o professor revelar."}</p>`}
     ${avisoTxt?`<p class="aviso">${esc(avisoTxt)}</p>`:""}
   </section>`;
 }
 function ligaResponder(){
+  const f = document.getElementById("fsala"); if(f){ f.onsubmit = e=>{ e.preventDefault(); const v = document.getElementById("csala").value.trim(); if(/^\d{4}$/.test(v)) entraSala(v); }; document.getElementById("csala").focus(); return; }
+  const sai = document.getElementById("sairsala"); if(sai) sai.onclick = e=>{ e.preventDefault(); sala=null; guarda.set("quiz-sala-aluno",""); if(cliente){ try{cliente.end(true);}catch(x){} cliente=null; } aoVivo=false; render(); };
   document.querySelectorAll("button.op").forEach(btn=>btn.onclick = async ()=>{
-    if(enviando || !meuId) { if(!meuId) mostraAviso("Entra na tua conta para poder responder."); return; }
+    if(enviando) return;
     const op = +btn.dataset.op; const r = meuVoto.ronda===estado.ronda ? {...meuVoto.r} : {};
     r[estado.qid] = op; meuVoto = {ronda:estado.ronda, r}; avisoTxt=""; render(); enviando=true;
-    try{ await db.doc("votos/"+meuId).set(meuVoto); }
-    catch(e){ mostraAviso("A resposta não foi enviada. Pede ao professor acesso para participar neste quiz."); }
+    if(cliente && estadoLigacao === "ligado"){ cliente.publish(topico("votos/"+meuId), JSON.stringify(meuVoto), { qos: 1, retain: true }); guarda.set("quiz-voto", JSON.stringify(meuVoto)); }
+    else mostraAviso("Sem ligação. A resposta será enviada quando voltares a tocar numa opção.");
     enviando=false;
   });
 }
@@ -693,9 +763,12 @@ function render(){
   if(v==="apresentar") ligaApresentar(); if(v==="responder") ligaResponder(); if(v==="estudar") ligaEstudar();
   if(foco && document.getElementById(foco)) document.getElementById(foco).focus({preventScroll:true});
 }
-window.addEventListener("hashchange",()=>{ avisoTxt=""; render(); });
-render(); liga();
+window.addEventListener("hashchange",()=>{ avisoTxt=""; const v=vista(); if((v==="apresentar"||v==="responder") && (!cliente || (v==="apresentar") !== eraProf)){ eraProf = v==="apresentar"; liga(); } render(); });
+let eraProf = vista()==="apresentar";
+render(); if(vista()==="apresentar"||vista()==="responder") liga();
 </script>
 
 </body>
 </html>
+
+</body></html>
