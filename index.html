@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quiz de Fórmulas Excel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: ecrã de projeção estilo votação ao vivo; pergunta + grelha de folha de cálculo à esquerda, opções/resultados à direita; telemóvel numa coluna */
+:root{
+  --bg:#FBF8F9; --surface:#FFFFFF; --ink:#2A1F23; --muted:#6E5F65; --line:#E6DADF;
+  --vinho:#722F3F; --rosa:#F6EFF1; --grid:#EEF3EE; --gridline:#CFDACF; --alvo:#FFF1B8;
+  --a:#722F3F; --b:#1F7A6D; --c:#B7791F; --d:#3E5C9A;
+  --certo:#1E7B45; --errado:#B3261E;
+  --f-disp:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1C1518; --surface:#271E22; --ink:#F3ECEE; --muted:#B9A9AF; --line:#3E3237;
+  --vinho:#E7A3B2; --rosa:#33252A; --grid:#1F2A22; --gridline:#34443A; --alvo:#5A4A12;
+  --a:#D98A9C; --b:#4FC1AE; --c:#E3AE55; --d:#8EA8E6; --certo:#5BD08A; --errado:#FF8A80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1518; --surface:#271E22; --ink:#F3ECEE; --muted:#B9A9AF; --line:#3E3237;
+  --vinho:#E7A3B2; --rosa:#33252A; --grid:#1F2A22; --gridline:#34443A; --alvo:#5A4A12;
+  --a:#D98A9C; --b:#4FC1AE; --c:#E3AE55; --d:#8EA8E6; --certo:#5BD08A; --errado:#FF8A80; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid var(--vinho);outline-offset:2px}
+a{color:var(--vinho)}
+.topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--vinho);padding-bottom:10px}
+.marca{display:flex;flex-direction:column}
+.marca small{font-weight:700;letter-spacing:.28em;font-size:11px;color:var(--vinho);text-transform:uppercase}
+.marca b{font-family:var(--f-disp);font-weight:800;font-size:22px;line-height:1.1}
+.nav{display:flex;gap:6px;flex-wrap:wrap}
+.nav a{text-decoration:none;padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:15px;color:var(--ink);background:var(--surface)}
+.nav a[aria-current="page"]{background:var(--vinho);color:var(--bg);border-color:var(--vinho)}
+h1,h2{font-family:var(--f-disp);font-weight:800;line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,5vw,52px)}
+.lead{color:var(--muted);max-width:60ch;margin:0}
+/* início */
+.modos{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.modo{display:flex;flex-direction:column;gap:8px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;text-decoration:none;color:var(--ink)}
+.modo:hover{border-color:var(--vinho)}
+.modo .tag{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--vinho)}
+.modo h2{font-size:26px}
+.modo p{margin:0;color:var(--muted);font-size:16px}
+.factos{display:flex;gap:24px;flex-wrap:wrap;color:var(--muted);font-size:15px}
+.factos b{font-family:var(--f-disp);font-size:28px;color:var(--ink);display:block;font-variant-numeric:tabular-nums}
+/* slide */
+.barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--rosa);color:var(--vinho);font-weight:700;font-size:14px}
+.nivel1{background:color-mix(in srgb,var(--b) 16%,transparent);color:var(--b)}
+.nivel2{background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.nivel3{background:color-mix(in srgb,var(--a) 18%,transparent);color:var(--a)}
+.slide{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:860px){.slide{grid-template-columns:minmax(0,1fr)}}
+.perg{display:flex;flex-direction:column;gap:16px;min-width:0}
+.perg h2{font-size:clamp(24px,3.2vw,36px);font-weight:600}
+.perg h2 strong{font-weight:800;color:var(--vinho)}
+code,.f{font-family:var(--f-mono);font-weight:700;font-size:.86em;background:var(--rosa);color:var(--vinho);padding:.08em .35em;border-radius:5px;word-break:break-word}
+.fn{color:var(--vinho)} .str{color:var(--b)} .ref{color:var(--d)}
+/* folha */
+.folha{overflow-x:auto;border:1px solid var(--gridline);border-radius:8px;background:var(--surface);max-width:100%}
+.folha table{border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums;min-width:100%}
+.folha th,.folha td{border:1px solid var(--gridline);padding:4px 10px;white-space:nowrap;text-align:left}
+.folha thead th,.folha .rn{background:var(--grid);color:var(--muted);font-weight:400;font-size:12px;text-align:center;font-family:var(--f-mono)}
+.folha .rn{width:34px}
+.folha tr.cab td{font-weight:700}
+.folha td.num{text-align:right}
+.folha td.alvo{background:var(--alvo);outline:2px solid var(--c);outline-offset:-2px;font-weight:700;text-align:center}
+.legenda{font-size:13px;color:var(--muted);margin-top:-8px}
+/* opções */
+.ops{display:flex;flex-direction:column;gap:10px;min-width:0}
+.op{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:12px;
+  padding:12px 14px;border-radius:12px;background:var(--surface);border:2px solid var(--line);overflow:hidden;text-align:left;width:100%}
+.op .letra{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-family:var(--f-disp);font-weight:800;font-size:20px;color:var(--bg);background:var(--k)}
+.op .txt{font-family:var(--f-mono);font-weight:500;font-size:16px;word-break:break-word;position:relative;z-index:1}
+.op .txt.plano{font-family:var(--f-body);font-size:18px}
+.op .pct{font-family:var(--f-disp);font-weight:800;font-size:20px;font-variant-numeric:tabular-nums;position:relative;z-index:1;min-width:3ch;text-align:right}
+.op .enche{position:absolute;inset:0 auto 0 0;width:0;background:color-mix(in srgb,var(--k) 18%,transparent);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){.op .enche{transition:none}}
+.op.certa{border-color:var(--certo);box-shadow:0 0 0 2px var(--certo) inset}
+.op.errada-escolha{border-color:var(--errado)}
+.op.apagada{opacity:.55}
+button.op:hover:not([disabled]){border-color:var(--k)}
+button.op[aria-pressed="true"]{border-color:var(--k);box-shadow:0 0 0 2px var(--k) inset}
+button.op[disabled]{cursor:default}
+.explica{border-left:5px solid var(--certo);background:var(--surface);border-radius:0 12px 12px 0;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.explica b{color:var(--certo)}
+.explica.mal{border-left-color:var(--errado)} .explica.mal b{color:var(--errado)}
+.controlos{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px}
+.grupo{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:16px}
+.btn.prim{background:var(--vinho);border-color:var(--vinho);color:var(--bg)}
+.btn[disabled]{opacity:.45;cursor:default}
+select{font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.conta{font-family:var(--f-disp);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
+.aviso{background:var(--rosa);border-radius:12px;padding:12px 16px;font-size:16px}
+.progresso{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.progresso i{display:block;height:100%;background:var(--vinho);transition:width .3s}
+.vazio{text-align:center;padding:48px 16px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.vazio .relogio{font-family:var(--f-mono);font-size:40px;color:var(--vinho)}
+.final{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.final .grande{font-family:var(--f-disp);font-weight:800;font-size:72px;line-height:1;color:var(--vinho);font-variant-numeric:tabular-nums}
+.lista-temas{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;width:100%}
+.lista-temas div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;justify-content:space-between;gap:8px}
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="topo">
+    <div class="marca"><small>Aplicações Informáticas para a Gestão</small><b>Quiz de Fórmulas</b></div>
+    <nav class="nav" aria-label="Modos">
+      <a href="#inicio" data-v="inicio">Início</a>
+      <a href="#apresentar" data-v="apresentar">Apresentar</a>
+      <a href="#responder" data-v="responder">Responder</a>
+      <a href="#estudar" data-v="estudar">Estudar sozinho</a>
+    </nav>
+  </header>
+  <main id="app" aria-live="polite"></main>
+</div>
+
+<script>
+// n: nível (1 Fácil, 2 Médio, 3 Difícil) · t: tipo · g: tabela de contexto (linha 1 = cabeçalho) · a: célula a preencher [linha, coluna]
+const Q = [
+{id:"soma",n:1,tema:"Contas",t:"Que fórmula?",
+ g:{rows:[["Aluno","Teste 1","Teste 2","Teste 3","Teste 4","Total"],["João",12,14,9,15,"?"]]},a:[1,5],
+ p:"Queres o **total** das 4 notas do João na célula F2. Que fórmula usas?",
+ o:["=SOMA(B2:E2)","=MÉDIA(B2:E2)","=CONTAR(B2:E2)","=MÁXIMO(B2:E2)"],c:0,
+ e:"Para somar usa-se SOMA com o intervalo das notas: de B2 até E2."},
+{id:"media-int",n:1,tema:"Contas",t:"Que parâmetros?",
+ g:{rows:[["Aluno","Teste 1","Teste 2","Teste 3","Teste 4","Média"],["Rita",11,13,16,10,"?"]]},a:[1,5],
+ p:"Completa a fórmula da média da Rita: `=MÉDIA( ___ )`",
+ o:["B2:E2","B2;E2","B2-E2","\"B2:E2\""],c:0,
+ e:"Os dois pontos querem dizer \"de B2 até E2\". Com ; só contava B2 e E2. Com aspas o Excel lê como texto."},
+{id:"maximo",n:1,tema:"Contas",t:"Que fórmula?",
+ g:{rows:[["Aluno","Média"],["Ana",14.5],["Rui",9.25],["Sara",17],["Tiago",12],["Maior média","?"]]},a:[5,1],
+ p:"Queres saber a **maior média** da turma. Que fórmula usas em B6?",
+ o:["=MAIOR(B2:B5)","=MÁXIMO(B2:B5)","=SOMA(B2:B5)","=ORDEM.EQ(B2:B5)"],c:1,
+ e:"MÁXIMO dá o número maior. MAIOR também serve, mas precisa da posição: =MAIOR(B2:B5; 1)."},
+{id:"contar-vazio",n:1,tema:"Contar",t:"Que fórmula?",
+ g:{rows:[["Nome","Cargo","Salário"],["Ana","Gerente","1 800 €"],["Rui","Vendedor",""],["Sara","Analista","1 450 €"],["Tiago","Segurança",""]]},
+ p:"Queres saber **quantos salários ainda estão por preencher**. Que fórmula usas?",
+ o:["=CONTAR(C2:C5)","=CONTAR.VAL(C2:C5)","=CONTAR.VAZIO(C2:C5)","=CONTAR.SE(C2:C5)"],c:2,
+ e:"Células vazias contam-se com CONTAR.VAZIO. Neste caso dá 2."},
+{id:"contar-num",n:1,tema:"Contar",t:"Que fórmula?",
+ g:{rows:[["Valores"],[25],["olá"],[40],["#N/D"],[13]]},
+ p:"A lista tem números, texto e erros. Queres contar **só os números**.",
+ o:["=CONTAR.VAL(A2:A6)","=CONTAR(A2:A6)","=SOMA(A2:A6)","=CONTAR.VAZIO(A2:A6)"],c:1,
+ e:"CONTAR só conta números. CONTAR.VAL contava tudo o que está escrito (dava 5)."},
+{id:"se-simples",n:1,tema:"SE",t:"Qual está certa?",
+ g:{rows:[["Aluno","Média","Situação"],["Rui",12,"?"]]},a:[1,2],
+ p:"O aluno passa com **10 ou mais**. Qual é a fórmula certa para C2?",
+ o:["=SE(B2>10; \"Aprovado\"; \"Reprovado\")","=SE(B2>=10; Aprovado; Reprovado)","=SE(B2>=10; \"Aprovado\"; \"Reprovado\")","=SE(\"B2>=10\"; \"Aprovado\"; \"Reprovado\")"],c:2,
+ e:"10 ou mais escreve-se >=. As palavras levam aspas. A pergunta (B2>=10) não leva aspas."},
+{id:"virgula",n:1,tema:"Regras",t:"Encontra o erro",
+ p:"No Excel em português, esta fórmula dá erro: `=SE(B2>=10, \"Aprovado\", \"Reprovado\")`. Porquê?",
+ o:["Faltam aspas","Usa vírgulas em vez de ponto e vírgula","O SE não aceita texto","Falta o sinal ="],c:1,
+ e:"No Excel português as partes separam-se com ; (ponto e vírgula)."},
+{id:"dolar",n:2,tema:"Regras",t:"Encontra o erro",
+ g:{rows:[["Código","Produto","Preço"],[1,"Caneta","0,80 €"],[2,"Caderno","2,50 €"],[3,"Lápis","0,40 €"]]},
+ p:"Escreveste `=PROCV(E2; A2:C4; 2; FALSO)` e arrastaste para baixo. Nas linhas seguintes dá erro. Como corriges?",
+ o:["Trocar FALSO por VERDADEIRO","Pôr $ na tabela: $A$2:$C$4","Trocar 2 por 3","Pôr aspas em E2"],c:1,
+ e:"Sem $ a tabela anda quando arrastas (passa a A3:C5…). O $ prende a tabela no sítio."},
+{id:"maior2",n:1,tema:"Contas",t:"Que parâmetros?",
+ p:"Queres o **2.º maior** valor das vendas em D2:D18. Completa: `=MAIOR(D2:D18; ___ )`",
+ o:["2","-2","\"2.º\"","D2"],c:0,
+ e:"MAIOR pede o intervalo e a posição. Posição 2 = segundo maior."},
+{id:"ordem",n:2,tema:"Contas",t:"Que fórmula?",
+ g:{rows:[["Nadador","Tempo (s)","Lugar"],["Ana",58.2,"?"],["Rui",55.9,""],["Sara",61.4,""]]},a:[1,2],
+ p:"Queres saber em que **lugar** ficou a Ana. O menor tempo ganha. Que fórmula usas?",
+ o:["=ORDEM.EQ(B2; B$2:B$4; 1)","=ORDEM.EQ(B2; B$2:B$4; 0)","=MÍNIMO(B2:B4)","=MENOR(B2:B4; 1)"],c:0,
+ e:"ORDEM.EQ dá o lugar. O último parâmetro 1 ordena do menor para o maior, porque aqui o menor tempo é o 1.º."},
+{id:"idade-ano",n:2,tema:"Datas",t:"Que fórmula?",
+ g:{rows:[["Matrícula","Ano","Idade"],["AA-11-BB",2016,"?"]]},a:[1,2],
+ p:"Queres a **idade do carro** em C2, a partir do ano em B2.",
+ o:["=HOJE()-B2","=ANO(HOJE())-B2","=ANO(B2)-HOJE()","=DATADIF(B2; HOJE())"],c:1,
+ e:"ANO(HOJE()) dá o ano em que estamos. Tira-se o ano do carro."},
+{id:"esquerda",n:2,tema:"Texto",t:"Que fórmula?",
+ g:{rows:[["Código","Tipo"],["CAR-2019-05","?"]]},a:[1,1],
+ p:"O código é **CAR-2019-05**. Queres só o tipo: as **3 primeiras letras**.",
+ o:["=DIREITA(A2; 3)","=ESQUERDA(A2; 3)","=SEG.TEXTO(A2; 3)","=NÚM.CARAT(A2)"],c:1,
+ e:"ESQUERDA tira letras do início. Aqui 3 letras: CAR."},
+{id:"segtexto",n:2,tema:"Texto",t:"Que parâmetros?",
+ g:{rows:[["Código","Ano"],["CAR-2019-05","?"]]},a:[1,1],
+ p:"O ano **2019** começa na posição 5 e tem 4 caracteres. Completa: `=SEG.TEXTO(A2; ___ ; ___ )`",
+ o:["4; 5","5; 4","5; 8","2019; 4"],c:1,
+ e:"SEG.TEXTO(texto; onde começa; quantas letras). Começa na 5.ª e tira 4."},
+{id:"juntar",n:2,tema:"Texto",t:"Que fórmula?",
+ g:{rows:[["Nome","Apelido","Apelido, Nome"],["Ana","Silva","?"]]},a:[1,2],
+ p:"Queres escrever **Silva, Ana** em C2.",
+ o:["=A2&B2","=B2&\", \"&A2","=B2+\", \"+A2","=SOMA(B2; A2)"],c:1,
+ e:"O & junta textos. A vírgula e o espaço vão entre aspas: \", \"."},
+{id:"procv-col",n:2,tema:"Procurar",t:"Que parâmetros?",
+ g:{rows:[["Código","Descrição","Preço"],[101,"Teclado","25 €"],[102,"Rato","12 €"],[103,"Monitor","140 €"]]},
+ p:"Queres o **preço** do código em F2. Completa: `=PROCV(F2; $A$2:$C$4; ___ ; FALSO)`",
+ o:["1","2","3","C"],c:2,
+ e:"O preço está na 3.ª coluna da tabela (A=1, B=2, C=3). Escreve-se o número, não a letra."},
+{id:"procv-falso",n:2,tema:"Procurar",t:"Que parâmetros?",
+ p:"Procuras um **código exato** (ex. 102) numa tabela de produtos. O último parâmetro do PROCV deve ser…",
+ o:["VERDADEIRO","FALSO","0,5","Fica vazio"],c:1,
+ e:"FALSO = procura exata. É o certo para códigos."},
+{id:"procv-escalao",n:2,tema:"Procurar",t:"Que fórmula?",
+ g:{rows:[["Nota mínima","Conceito"],[0,"Insuficiente"],[10,"Suficiente"],[14,"Bom"],[17,"Muito bom"]]},
+ p:"A média do aluno está em F3. Queres o **conceito** usando esta tabela (I2:J5).",
+ o:["=PROCV(F3; $I$2:$J$5; 2; VERDADEIRO)","=PROCV(F3; $I$2:$J$5; 2; FALSO)","=PROCH(F3; $I$2:$J$5; 2; VERDADEIRO)","=SE(F3; $I$2:$J$5)"],c:0,
+ e:"Uma nota de 15,3 não aparece na tabela. VERDADEIRO procura o escalão onde ela cai (Bom). A 1.ª coluna tem de estar do menor para o maior."},
+{id:"proch",n:2,tema:"Procurar",t:"Que fórmula?",
+ g:{rows:[["Eixos","E10","E20","E30"],["Rolamentos",4,6,8]]},
+ p:"A tabela está **deitada**: os códigos estão numa linha. Queres os rolamentos do eixo escolhido em C8.",
+ o:["=PROCV(C8; B1:D2; 2; FALSO)","=PROCH(C8; B1:D2; 2; FALSO)","=ÍNDICE(C8; B1:D2)","=PROCH(C8; B1:D2; 2)"],c:1,
+ e:"Tabela em linha → PROCH. O 2 é a linha onde está a resposta. FALSO para valor exato."},
+{id:"seerro",n:2,tema:"Procurar",t:"Que fórmula?",
+ p:"Quando o código não existe, o PROCV mostra **#N/D**. Queres que apareça **Código inexistente**.",
+ o:["=SE(PROCV(E2; $A$2:$B$10; 2; FALSO); \"Código inexistente\")","=SE.ERRO(PROCV(E2; $A$2:$B$10; 2; FALSO); \"Código inexistente\")","=PROCV(E2; $A$2:$B$10; 2; \"Código inexistente\")","=É.ERRO(\"Código inexistente\")"],c:1,
+ e:"SE.ERRO fica por fora: primeiro a fórmula, depois a mensagem para quando der erro."},
+{id:"ses",n:2,tema:"SE",t:"Que fórmula?",
+ g:{rows:[["Nadador","Idade","Categoria"],["Leo",9,"?"]]},a:[1,2],
+ p:"Até 10 anos = Infantil · até 17 = Juvenil · até 60 = Adulto · mais de 60 = Sénior. Qual é a melhor fórmula?",
+ o:["=SE(B2<=10; \"Infantil\"; \"Sénior\")","=SE.S(B2<=10; \"Infantil\"; B2<=17; \"Juvenil\"; B2<=60; \"Adulto\"; VERDADEIRO; \"Sénior\")","=SE.S(B2>10; \"Infantil\"; B2>17; \"Juvenil\")","=PROCV(B2; \"Infantil\"; \"Juvenil\")"],c:1,
+ e:"São 4 escalões, por isso SE.S. Testa do mais pequeno para o maior. VERDADEIRO no fim apanha o resto."},
+{id:"e-desconto",n:2,tema:"SE",t:"Que fórmula?",
+ g:{rows:[["Valor","Pagamento","A pagar"],[250,"Pronto","?"]]},a:[1,2],
+ p:"Há 5% de desconto se a compra for **maior que 200 €** e **também** for paga a pronto.",
+ o:["=SE(OU(A2>200; B2=\"Pronto\"); A2*95%; A2)","=SE(E(A2>200; B2=\"Pronto\"); A2*95%; A2)","=SE(A2>200; A2*95%; B2=\"Pronto\")","=E(A2>200; B2=\"Pronto\")"],c:1,
+ e:"\"E também\" → as duas condições têm de se cumprir → E. Com desconto paga 95%."},
+{id:"ou-comissao",n:2,tema:"SE",t:"Que fórmula?",
+ g:{rows:[["Produto","Tipo","Vendas","Comissão"],["Portátil","Computador","3 000 €","?"]]},a:[1,3],
+ p:"Comissão de **10%** para Computador **ou** Software. Para o resto, 5%.",
+ o:["=SE(OU(B2=\"Computador\"; B2=\"Software\"); C2*10%; C2*5%)","=SE(E(B2=\"Computador\"; B2=\"Software\"); C2*10%; C2*5%)","=SE(B2=\"Computador\"; \"Software\"; C2*10%)","=OU(C2*10%; C2*5%)"],c:0,
+ e:"Basta ser um dos dois → OU. Com E nunca dava 10%, porque o tipo não pode ser as duas coisas."},
+{id:"somase",n:2,tema:"Somar só alguns",t:"Que fórmula?",
+ g:{rows:[["Vendedor","Região","Valor"],["Ana","Norte",1200],["Rui","Sul",800],["Ana","Sul",650],["Sara","Norte",1500]]},
+ p:"Queres o **total vendido pela Ana**.",
+ o:["=SOMA.SE(A2:A5; \"Ana\"; C2:C5)","=SOMA(A2:A5; \"Ana\")","=CONTAR.SE(A2:A5; \"Ana\")","=SOMA.SE(C2:C5; \"Ana\"; A2:A5)"],c:0,
+ e:"SOMA.SE(onde procuro; condição; o que somar). Procura \"Ana\" na coluna A e soma a coluna C."},
+{id:"contarse",n:2,tema:"Somar só alguns",t:"Que fórmula?",
+ g:{rows:[["Vendedor","Região","Valor"],["Ana","Norte",1200],["Rui","Sul",800],["Ana","Sul",650],["Sara","Norte",1500]]},
+ p:"Queres saber **quantas vendas** foram feitas no Norte.",
+ o:["=SOMA.SE(B2:B5; \"Norte\"; C2:C5)","=CONTAR.SE(B2:B5; \"Norte\")","=CONTAR(B2:B5)","=CONTAR.VAL(\"Norte\")"],c:1,
+ e:"Quantas vezes aparece → CONTAR.SE. Aqui dá 2."},
+{id:"mediase",n:2,tema:"Somar só alguns",t:"Que parâmetros?",
+ g:{rows:[["Título","Assunto","Preço"],["Livro A","Psicologia",18],["Livro B","Literatura",12],["Livro C","Psicologia",22]]},
+ p:"Queres o **preço médio dos livros de Psicologia**. Qual é a ordem certa dos parâmetros?",
+ o:["=MÉDIA.SE(C2:C4; \"Psicologia\"; B2:B4)","=MÉDIA.SE(B2:B4; \"Psicologia\"; C2:C4)","=MÉDIA.SE(\"Psicologia\"; B2:B4; C2:C4)","=MÉDIA(B2:B4; \"Psicologia\")"],c:1,
+ e:"Nas funções .SE o que se calcula vai no fim: onde procuro; condição; o que calcular."},
+{id:"somases",n:3,tema:"Somar só alguns",t:"Que fórmula?",
+ g:{rows:[["Vendedor","Região","Valor"],["Ana","Norte",1200],["Rui","Sul",800],["Ana","Sul",650],["Ana","Norte",400]]},
+ p:"Queres o total da **Ana** só na região **Norte**. São 2 condições.",
+ o:["=SOMA.SE(A2:A5; \"Ana\"; \"Norte\")","=SOMA.SE.S(C2:C5; A2:A5; \"Ana\"; B2:B5; \"Norte\")","=SOMA.SE.S(A2:A5; \"Ana\"; B2:B5; \"Norte\"; C2:C5)","=SOMA(C2:C5; \"Ana\"; \"Norte\")"],c:1,
+ e:"2 condições → SOMA.SE.S. O que somar vai no início. Depois: onde 1; condição 1; onde 2; condição 2. Dá 1 600."},
+{id:"somases-erro",n:3,tema:"Somar só alguns",t:"Encontra o erro",
+ p:"Esta fórmula está errada: `=SOMA.SE.S(A2:A7; \"Ana\"; B2:B7; \"Norte\"; C2:C7)`. O que tens de mudar?",
+ o:["Trocar SOMA.SE.S por SOMA.SE","Pôr C2:C7 no início","Tirar as aspas de \"Ana\"","Juntar as condições com E"],c:1,
+ e:"Na SOMA.SE.S o intervalo a somar vem sempre primeiro."},
+{id:"contarses-vazio",n:3,tema:"Somar só alguns",t:"Que parâmetros?",
+ g:{rows:[["Leitor","Livro","Emprestado","Devolvido"],["Ana","Livro A","02/10","10/10"],["Ana","Livro B","05/10",""],["Rui","Livro C","06/10",""]]},
+ p:"Queres contar os livros do leitor escolhido em F2 que **ainda não foram devolvidos**. Que condição pões na coluna D?",
+ o:["\"0\"","\"\"","\"vazio\"","D2:D4"],c:1,
+ e:"Duas aspas juntas querem dizer \"vazio\". Fórmula: =CONTAR.SE.S(A2:A4; F2; D2:D4; \"\")."},
+{id:"maxses",n:3,tema:"Somar só alguns",t:"Que fórmula?",
+ g:{rows:[["Preço","Tipo","Cidade","Quartos"],["210 000","Casa","Porto Alegre",4],["180 000","Apartamento","Porto Alegre",4],["250 000","Casa","Porto Alegre",3]]},
+ p:"Queres o **preço mais alto** de uma **Casa** em **Porto Alegre** com **4 quartos**.",
+ o:["=MÁXIMO(A2:A4)","=MÁXIMO.SE.S(A2:A4; B2:B4; \"Casa\"; C2:C4; \"Porto Alegre\"; D2:D4; 4)","=MAIOR(A2:A4; \"Casa\")","=MÁXIMO.SE.S(B2:B4; \"Casa\"; C2:C4; \"Porto Alegre\"; A2:A4)"],c:1,
+ e:"3 condições → MÁXIMO.SE.S. Primeiro onde está o preço, depois cada par onde; condição."},
+{id:"acima-media",n:3,tema:"Somar só alguns",t:"Que fórmula?",
+ p:"Queres contar quantas vendas em C2:C7 estão **acima da média**.",
+ o:["=CONTAR.SE(C2:C7; \">MÉDIA(C2:C7)\")","=CONTAR.SE(C2:C7; \">\"&MÉDIA(C2:C7))","=CONTAR(C2:C7>MÉDIA(C2:C7))","=MÉDIA.SE(C2:C7; \">\")"],c:1,
+ e:"O sinal > vai entre aspas e junta-se ao cálculo com &. Dentro das aspas o Excel não calcularia a MÉDIA."},
+{id:"indice-max",n:3,tema:"Procurar",t:"Que fórmula?",
+ g:{rows:[["Atleta","Prova 1","Prova 2","Total"],["Ana",8,9,17],["Rui",9,9,18],["Sara",7,8,15]]},
+ p:"Queres o **nome** do atleta com o maior total.",
+ o:["=MÁXIMO(D2:D4)","=ÍNDICE(A2:A4; CORRESP(MÁXIMO(D2:D4); D2:D4; 0))","=PROCV(MÁXIMO(D2:D4); A2:D4; 1; FALSO)","=CORRESP(A2:A4; MÁXIMO(D2:D4))"],c:1,
+ e:"MÁXIMO encontra 18. CORRESP diz em que linha está. ÍNDICE vai buscar o nome dessa linha: Rui. O PROCV não serve porque o nome está à esquerda."},
+{id:"indice-2",n:3,tema:"Procurar",t:"Que parâmetros?",
+ p:"Queres o nome de quem ficou em **2.º lugar**. O que pões dentro do CORRESP? `=ÍNDICE(A2:A4; CORRESP( ___ ; D2:D4; 0))`",
+ o:["MÁXIMO(D2:D4)","MAIOR(D2:D4; 2)","2","MENOR(D2:D4; 2)"],c:1,
+ e:"MAIOR(…; 2) dá o 2.º maior total. O resto da fórmula fica igual."},
+{id:"procv-esquerda",n:3,tema:"Procurar",t:"Que fórmula?",
+ g:{rows:[["Filme","Código","Género"],["Duna","F-204","?"]]},a:[1,2],
+ p:"A **1.ª letra** do código diz o género (F = Ficção). A tabela dos géneros está em $F$7:$G$12.",
+ o:["=PROCV(B2; $F$7:$G$12; 2; FALSO)","=ESQUERDA(PROCV(B2; $F$7:$G$12; 2); 1)","=PROCV(ESQUERDA(B2; 1); $F$7:$G$12; 2; FALSO)","=ESQUERDA(B2; 1)"],c:2,
+ e:"Primeiro ESQUERDA tira a letra F. Depois o PROCV procura essa letra na tabela."},
+{id:"primeiro-nome",n:3,tema:"Texto",t:"Que parâmetros?",
+ g:{rows:[["Nome completo","Primeiro nome"],["Marta Lopes","?"]]},a:[1,1],
+ p:"PROCURAR(\" \"; A2) dá 6 (o espaço). Queres **Marta** sem o espaço. Completa: `=ESQUERDA(A2; PROCURAR(\" \"; A2) ___ )`",
+ o:["+1","-1","*2","&\" \""],c:1,
+ e:"O espaço está na posição 6. Tiras 1 para ficar só com as 5 letras de Marta."},
+{id:"frase-dia",n:3,tema:"Texto",t:"Que fórmula?",
+ g:{rows:[["Nome","Data","Mensagem"],["Rita","14/03/2025","?"]]},a:[1,2],
+ p:"Queres a frase: **A prova da Rita é numa sexta-feira.**",
+ o:["=\"A prova da \"&A2&\" é numa \"&TEXTO(B2; \"dddd\")&\".\"","=\"A prova da A2 é numa B2.\"","=A2&B2","=TEXTO(\"A prova da \"; A2; B2)"],c:0,
+ e:"O & junta as partes. TEXTO(B2; \"dddd\") escreve o dia da semana por extenso."},
+{id:"datadif",n:3,tema:"Datas",t:"Que parâmetros?",
+ p:"Queres a **idade em anos**. Data de nascimento em A6, hoje em B6. Completa: `=DATADIF(A6; B6; ___ )`",
+ o:["\"D\"","\"M\"","\"Y\"","365"],c:2,
+ e:"\"Y\" dá anos completos. \"M\" dá meses e \"D\" dá dias."},
+{id:"diatrabalho",n:3,tema:"Datas",t:"Que fórmula?",
+ p:"Uma encomenda feita em A2 tem de ser entregue em **20 dias úteis**. Queres saber **a data** de entrega.",
+ o:["=A2+20","=DIATRABALHO(A2; 20)","=DIATRABALHOTOTAL(A2; 20)","=DATADIF(A2; 20; \"D\")"],c:1,
+ e:"DIATRABALHO dá uma data. DIATRABALHOTOTAL dá um número de dias. A2+20 contava fins de semana."},
+{id:"diatrabtotal",n:3,tema:"Datas",t:"Que fórmula?",
+ g:{rows:[["Início","Fim","Feriados"],["01/04/2025","30/04/2025","18/04/2025"],["","","25/04/2025"]]},
+ p:"Queres saber **quantos dias úteis** tem abril, **sem contar os feriados**.",
+ o:["=B2-A2","=DIATRABALHO(A2; B2; C2:C3)","=DIATRABALHOTOTAL(A2; B2; C2:C3)","=DIATRABALHOTOTAL(A2; B2)"],c:2,
+ e:"Quantos dias úteis → DIATRABALHOTOTAL. Os feriados entram no 3.º parâmetro."},
+{id:"intl",n:3,tema:"Datas",t:"Que parâmetros?",
+ p:"Uma loja só fecha ao **domingo**. Que código de folga usas em `=DIATRABALHOTOTAL.INTL(A6; B6; ___ )`?",
+ o:["1","2","11","\"1111100\""],c:2,
+ e:"O código 11 quer dizer folga só ao domingo. O 1 é sábado e domingo."},
+{id:"todas-e",n:3,tema:"SE",t:"Que fórmula?",
+ g:{rows:[["Aluno","T1","T2","T3","Situação"],["Leo",7,6,8,"?"]]},a:[1,4],
+ p:"O aluno passa só se **todas** as notas forem **maiores que 5**.",
+ o:["=SE(B2:D2>5; \"Aprovado\"; \"Reprovado\")","=SE(E(B2>5; C2>5; D2>5); \"Aprovado\"; \"Reprovado\")","=SE(OU(B2>5; C2>5; D2>5); \"Aprovado\"; \"Reprovado\")","=SE(MÉDIA(B2:D2)>5; \"Aprovado\"; \"Reprovado\")"],c:1,
+ e:"Todas → E, com uma pergunta para cada nota. A média podia ser maior que 5 com uma nota baixa."},
+{id:"selecionar",n:3,tema:"SE",t:"Que fórmula?",
+ g:{rows:[["Nome","Código","Cargo"],["Ana",2,"?"]]},a:[1,2],
+ p:"O código diz o cargo: 1 Vendedor, 2 Gerente, 3 Secretária. Qual é a fórmula mais simples?",
+ o:["=SELECIONAR(B2; \"Vendedor\"; \"Gerente\"; \"Secretária\")","=SE.S(B2; \"Vendedor\"; \"Gerente\")","=ÍNDICE(B2; \"Vendedor\")","=PROCV(B2; \"Gerente\"; 2)"],c:0,
+ e:"SELECIONAR troca 1, 2, 3… pela opção nessa posição. Com 2 dá Gerente."},
+{id:"zero-parcial",n:3,tema:"SE",t:"Que fórmula?",
+ g:{rows:[["Item","Qtd","Preço","Parcial"],["Caderno",3,0,"?"]]},a:[1,3],
+ p:"O valor parcial é preço × quantidade, mas **só se o preço não for 0**. Se for 0, mostra 0.",
+ o:["=SE(C2<>0; C2*B2; 0)","=SE(C2=0; C2*B2; 0)","=C2*B2","=SE(C2>0; 0; C2*B2)"],c:0,
+ e:"<> quer dizer \"diferente de\". Se o preço é diferente de 0, multiplica."},
+];
+
+// ---- tipos novos: resultado, símbolos, consequências ----
+Q.push(
+{id:"r-media",n:1,tema:"Contas",t:"Qual dá este resultado?",
+ g:{rows:[["Aluno","T1","T2","T3"],["Ana",12,14,16]]},
+ p:"Queres que apareça **14**. Qual destas fórmulas usavas?",
+ o:["=MÉDIA(B2:D2)","=SOMA(B2:D2)","=MÁXIMO(B2:D2)","=CONTAR(B2:D2)"],c:0,
+ e:"A média de 12, 14 e 16 é 14. A SOMA dava 42, o MÁXIMO dava 16 e o CONTAR dava 3."},
+{id:"r-ano",n:2,tema:"Texto",t:"Qual dá este resultado?",
+ g:{rows:[["Código"],["CAR-2019-05"]]},
+ p:"Queres que apareça **2019**. Qual usavas?",
+ o:["=SEG.TEXTO(A2; 5; 4)","=ESQUERDA(A2; 4)","=DIREITA(A2; 4)","=SEG.TEXTO(A2; 4; 5)"],c:0,
+ e:"SEG.TEXTO(A2; 5; 4) começa na 5.ª letra e tira 4: 2019. ESQUERDA dava CAR- e DIREITA dava 9-05."},
+{id:"r-contarse",n:2,tema:"Somar só alguns",t:"Qual dá este resultado?",
+ g:{rows:[["Vendedor","Região","Valor"],["Ana","Norte",1200],["Rui","Sul",800],["Ana","Sul",650],["Sara","Norte",1500]]},
+ p:"Queres que apareça **2** (o número de vendas no Norte). Qual usavas?",
+ o:["=CONTAR.SE(B2:B5; \"Norte\")","=SOMA.SE(B2:B5; \"Norte\"; C2:C5)","=CONTAR(B2:B5)","=CONTAR.VAL(B2:B5)"],c:0,
+ e:"CONTAR.SE conta quantas vezes aparece Norte. A SOMA.SE dava 2 700 €. O CONTAR dava 0, porque a coluna B só tem texto."},
+{id:"r-indice",n:3,tema:"Procurar",t:"Qual dá este resultado?",
+ g:{rows:[["Atleta","Prova 1","Prova 2","Total"],["Ana",8,9,17],["Rui",9,9,18],["Sara",7,8,15]]},
+ p:"Queres que apareça **Rui**, o atleta com o maior total. Qual usavas?",
+ o:["=ÍNDICE(A2:A4; CORRESP(MÁXIMO(D2:D4); D2:D4; 0))","=MÁXIMO(D2:D4)","=CORRESP(MÁXIMO(D2:D4); D2:D4; 0)","=PROCV(18; A2:D4; 1; FALSO)"],c:0,
+ e:"MÁXIMO dava 18, CORRESP dava 2 (a posição) e o PROCV dava #N/D, porque procura o 18 na 1.ª coluna. Só a fórmula toda devolve o nome."},
+{id:"d-se10",n:1,tema:"SE",t:"O que dá esta fórmula?",
+ g:{rows:[["Aluno","Média","Situação"],["Rui",10,"?"]]},a:[1,2],
+ p:"Em C2 está `=SE(B2>=10; \"Aprovado\"; \"Reprovado\")`. O que aparece?",
+ o:["Aprovado","Reprovado","10","VERDADEIRO"],c:0,
+ e:">= quer dizer \"maior ou igual\". 10 é igual a 10, por isso a pergunta é SIM: Aprovado."},
+{id:"d-se10b",n:2,tema:"SE",t:"O que dá esta fórmula?",
+ g:{rows:[["Aluno","Média","Situação"],["Rui",10,"?"]]},a:[1,2],
+ p:"E se a fórmula for `=SE(B2>10; \"Aprovado\"; \"Reprovado\")`? O que aparece agora?",
+ o:["Aprovado","Reprovado","Dá erro","Fica vazio"],c:1,
+ e:"> quer dizer \"maior que\". 10 não é maior que 10, por isso aparece Reprovado. Um só sinal muda o resultado."},
+{id:"d-esquerda",n:1,tema:"Texto",t:"O que dá esta fórmula?",
+ p:"O que devolve `=ESQUERDA(\"Marta Lopes\"; 3)`?",
+ o:["Mar","pes","Marta","3"],c:0,
+ e:"ESQUERDA tira letras do início. 3 letras: Mar."},
+{id:"d-numcarat",n:2,tema:"Texto",t:"O que dá esta fórmula?",
+ p:"O que devolve `=NÚM.CARAT(\"Ana Silva\")`?",
+ o:["8","9","2","Ana Silva"],c:1,
+ e:"Conta todas as letras e também o espaço: 3 + 1 + 5 = 9."},
+{id:"d-contarval",n:2,tema:"Contar",t:"O que dá esta fórmula?",
+ g:{rows:[["Valores"],[25],["olá"],[""],[40],["sim"]]},
+ p:"O que devolve `=CONTAR.VAL(A2:A6)`?",
+ o:["2","3","4","5"],c:2,
+ e:"CONTAR.VAL conta as células preenchidas: 25, olá, 40 e sim. A célula vazia não conta."},
+{id:"d-media-vazia",n:3,tema:"Contas",t:"O que dá esta fórmula?",
+ g:{rows:[["Aluno","T1","T2","T3"],["Ana",10,"",14]]},
+ p:"C2 está **vazia**. O que devolve `=MÉDIA(B2:D2)`?",
+ o:["8","12","24","Dá erro"],c:1,
+ e:"A célula vazia não entra na média: (10 + 14) ÷ 2 = 12. Se lá estivesse um 0, dava 8."},
+{id:"d-resto",n:2,tema:"Contas",t:"O que dá esta fórmula?",
+ p:"O que devolve `=RESTO(17; 5)`?",
+ o:["3","2","3,4","12"],c:1,
+ e:"17 a dividir por 5 dá 3 e sobram 2. O RESTO devolve o que sobra."},
+{id:"s-dolar",n:1,tema:"Símbolos",t:"O que significa?",
+ p:"Numa fórmula aparece `$A$2`. O que fazem os **$**?",
+ o:["Mostram o valor em euros","Prendem a célula quando arrastas a fórmula","Somam a célula A2","Apagam a célula A2"],c:1,
+ e:"O $ fixa a referência. Ao arrastar, $A$2 continua sempre A2. Não tem nada a ver com dinheiro."},
+{id:"s-dolar-linha",n:3,tema:"Símbolos",t:"O que significa?",
+ p:"E `A$2`, com o $ só antes do 2?",
+ o:["Prende só a linha 2","Prende só a coluna A","Prende a linha e a coluna","Não prende nada"],c:0,
+ e:"O $ prende o que está logo a seguir. Aqui prende a linha 2. A coluna pode mudar quando arrastas para o lado."},
+{id:"s-dois-pontos",n:1,tema:"Símbolos",t:"O que significa?",
+ p:"O que quer dizer `B2:E2`?",
+ o:["B2 e E2, só essas duas","De B2 até E2","B2 a dividir por E2","B2 menos E2"],c:1,
+ e:"Os dois pontos fazem um intervalo: B2, C2, D2 e E2."},
+{id:"s-pontovirgula",n:1,tema:"Símbolos",t:"O que significa?",
+ p:"Para que serve o **;** em `=SE(B2>=10; \"Sim\"; \"Não\")`?",
+ o:["Termina a fórmula","Separa as partes da fórmula","Multiplica","Junta textos"],c:1,
+ e:"O ponto e vírgula separa os parâmetros: a pergunta, a resposta se SIM e a resposta se NÃO."},
+{id:"s-diferente",n:1,tema:"Símbolos",t:"O que significa?",
+ p:"O que quer dizer `<>` em `=SE(C2<>0; ...)`?",
+ o:["Menor ou igual","Maior ou igual","Diferente de","Entre"],c:2,
+ e:"<> quer dizer \"diferente de\". C2<>0 pergunta se C2 não é zero."},
+{id:"s-asterisco",n:2,tema:"Símbolos",t:"O que significa?",
+ p:"Numa condição aparece `\"E*\"`. O que procura?",
+ o:["Só a letra E","Textos que começam por E","Textos que acabam em E","E vezes qualquer número"],c:1,
+ e:"O * substitui qualquer conjunto de letras. \"E*\" apanha Empresa, Escola, Elsa…"},
+{id:"s-ecomercial",n:1,tema:"Símbolos",t:"O que significa?",
+ p:"Para que serve o **&** em `=A2 & \" \" & B2`?",
+ o:["Soma","Junta textos","Compara","Fixa a célula"],c:1,
+ e:"O & cola textos e células uns aos outros. Aqui junta A2, um espaço e B2."},
+{id:"s-aspas-vazias",n:2,tema:"Símbolos",t:"O que significa?",
+ p:"Numa condição aparece `\"\"` (duas aspas juntas). O que quer dizer?",
+ o:["Um espaço","Zero","Célula vazia","Qualquer texto"],c:2,
+ e:"Aspas sem nada dentro = vazio. Serve, por exemplo, para contar livros ainda sem data de devolução."},
+{id:"s-nd",n:2,tema:"Símbolos",t:"O que significa?",
+ p:"O PROCV mostrou **#N/D**. O que quer dizer?",
+ o:["Não encontrou o que procuravas","Dividiste por zero","O nome da função está mal escrito","A coluna é muito estreita"],c:0,
+ e:"#N/D = não disponível: o valor não existe na tabela. Resolve-se com SE.ERRO por fora."},
+{id:"s-erros",n:3,tema:"Símbolos",t:"O que significa?",
+ p:"Escreveste `=SOMMA(B2:E2)` e apareceu um erro. Qual?",
+ o:["#N/D","#DIV/0!","#NOME?","#####"],c:2,
+ e:"#NOME? aparece quando o Excel não conhece o nome da função (SOMMA em vez de SOMA) ou quando falta pôr aspas num texto."},
+{id:"a-sem-dolar",n:2,tema:"Regras",t:"O que acontece se…?",
+ p:"Escreves `=PROCV(E2; A2:C6; 2; FALSO)` **sem $** e arrastas para baixo. O que acontece?",
+ o:["Nada, funciona igual","A tabela desce também e começam a aparecer erros","O Excel põe os $ sozinho","A fórmula apaga-se"],c:1,
+ e:"Sem $ a tabela passa a A3:C7, A4:C8… Fica sem as primeiras linhas e aparecem #N/D ou valores errados."},
+{id:"a-pontovirgula",n:1,tema:"Contas",t:"O que acontece se…?",
+ g:{rows:[["T1","T2","T3","T4"],[10,12,14,16]]},
+ p:"Em vez de `=SOMA(A2:D2)` escreves `=SOMA(A2;D2)`. O que acontece?",
+ o:["Dá o mesmo: 52","Soma só A2 e D2: 26","Dá erro","Soma até à linha D"],c:1,
+ e:"Com ; o Excel soma só as células indicadas: 10 + 16 = 26. Para somar tudo usa :"},
+{id:"a-sem-aspas",n:2,tema:"Regras",t:"O que acontece se…?",
+ p:"Escreves `=SE(B2>=10; Aprovado; Reprovado)`, **sem aspas**. O que acontece?",
+ o:["Funciona normalmente","Aparece o erro #NOME?","Aparece sempre Aprovado","Aparece 0"],c:1,
+ e:"Sem aspas o Excel pensa que Aprovado é o nome de uma função ou de uma célula. Como não existe, dá #NOME?."},
+{id:"a-verdadeiro",n:3,tema:"Procurar",t:"O que acontece se…?",
+ g:{rows:[["Código","Produto"],[105,"Teclado"],[101,"Rato"],[110,"Monitor"]]},
+ p:"Procuras um código exato mas escreves **VERDADEIRO** no fim do PROCV. O que pode acontecer?",
+ o:["Encontra sempre o código certo","Dá um produto errado sem avisar","Dá sempre #N/D","O Excel troca para FALSO"],c:1,
+ e:"VERDADEIRO procura o valor aproximado e espera a tabela por ordem. Pode devolver o produto de outro código e não avisa. Para códigos usa FALSO."},
+{id:"a-ordem-se",n:3,tema:"SE",t:"O que acontece se…?",
+ g:{rows:[["Nadador","Idade","Categoria"],["Leo",9,"?"]]},a:[1,2],
+ p:"Escreves `=SE(B2<=60; \"Adulto\"; SE(B2<=17; \"Juvenil\"; \"Infantil\"))`. O que aparece para o Leo, de 9 anos?",
+ o:["Infantil","Juvenil","Adulto","Dá erro"],c:2,
+ e:"9 é menor que 60, por isso a 1.ª pergunta já é SIM e pára logo: Adulto. Testa sempre do escalão mais pequeno para o maior."},
+{id:"a-mais20",n:2,tema:"Datas",t:"O que acontece se…?",
+ p:"Para um prazo de 20 dias úteis escreves `=A2+20` em vez de `=DIATRABALHO(A2; 20)`. O que acontece?",
+ o:["Dá a mesma data","A data fica mais cedo, porque conta também sábados e domingos","A data fica mais tarde","Dá erro"],c:1,
+ e:"A2+20 conta dias seguidos, com fins de semana. O DIATRABALHO salta sábados e domingos, por isso chega a uma data mais tarde."},
+{id:"a-contar-nomes",n:2,tema:"Contar",t:"O que acontece se…?",
+ g:{rows:[["Nome"],["Ana"],["Rui"],["Sara"]]},
+ p:"Queres contar os nomes e escreves `=CONTAR(A2:A4)`. O que aparece?",
+ o:["3","0","Dá erro","Ana"],c:1,
+ e:"CONTAR só conta números, e aqui só há texto. Para contar nomes usa CONTAR.VAL, que dá 3."}
+);
+// distribuir a resposta certa pelas letras A–D (troca de posições, sempre igual)
+Q.forEach((q,k)=>{ const alvo=[2,0,3,1,1,3,0,2,3,1,2,0][k%12]; if(alvo===q.c) return;
+  const o=q.o.slice(); [o[alvo],o[q.c]]=[o[q.c],o[alvo]]; q.o=o; q.c=alvo; });
+
+const NIVEL = {1:"Fácil",2:"Médio",3:"Difícil"};
+const CORES = ["--a","--b","--c","--d"];
+const LETRAS = ["A","B","C","D"];
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+
+// realce de fórmulas: funções, textos entre aspas, referências
+function realca(f){
+  const parts = []; let rx = /("([^"]|"")*")|([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9.]*)(?=\()|(\$?[A-Z]{1,2}\$?\d+(:\$?[A-Z]{1,2}\$?\d+)?)/g, last=0, m;
+  while((m = rx.exec(f))){ parts.push(esc(f.slice(last,m.index)));
+    if(m[1]) parts.push(`<span class="str">${esc(m[1])}</span>`);
+    else if(m[3]) parts.push(`<span class="fn">${esc(m[3])}</span>`);
+    else parts.push(`<span class="ref">${esc(m[4])}</span>`);
+    last = rx.lastIndex; }
+  parts.push(esc(f.slice(last))); return parts.join("");
+}
+function texto(t){ // **negrito** e `código`
+  return esc(t).replace(/`([^`]+)`/g,(_,c)=>`<code>${realca(c.replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&'))}</code>`)
+               .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
+}
+const eFormula = s => /^=/.test(s) || /[;:$]/.test(s) || /^[-+*&]/.test(s) || /^"/.test(s) || /^[A-Z]\d/.test(s);
+function folha(q){
+  if(!q.g) return "";
+  const rows = q.g.rows, ncol = Math.max(...rows.map(r=>r.length));
+  let h = `<div class="folha"><table><thead><tr><th class="rn"></th>`;
+  for(let c=0;c<ncol;c++) h += `<th>${String.fromCharCode(65+c)}</th>`;
+  h += `</tr></thead><tbody>`;
+  rows.forEach((r,i)=>{ h += `<tr class="${i===0?'cab':''}"><td class="rn">${i+1}</td>`;
+    for(let c=0;c<ncol;c++){ const v = r[c]===undefined?"":r[c]; const alvo = q.a && q.a[0]===i && q.a[1]===c;
+      h += `<td class="${alvo?'alvo':''} ${typeof v==='number'?'num':''}">${esc(typeof v==='number'? String(v).replace('.',','):v)}</td>`; }
+    h += `</tr>`; });
+  h += `</tbody></table></div>`;
+  if(q.a) h += `<div class="legenda">A célula amarela (${String.fromCharCode(65+q.a[1])}${q.a[0]+1}) é onde vai a fórmula.</div>`;
+  return h;
+}
+function cabecalho(q,pos,total){
+  return `<div class="barra"><span class="chip nivel${q.n}">${NIVEL[q.n]}</span><span class="chip">${esc(q.t)}</span><span>${esc(q.tema)}</span><span style="margin-left:auto" class="conta">${pos} / ${total}</span></div>
+  <div class="progresso" aria-hidden="true"><i style="width:${Math.round(pos/total*100)}%"></i></div>`;
+}
+function opcoes(q, {modo, escolha=null, contagens=null, revelar=false}){
+  const total = contagens ? contagens.reduce((a,b)=>a+b,0) : 0;
+  return `<div class="ops" role="${modo==='votar'?'group':'list'}" aria-label="Opções">` + q.o.map((o,i)=>{
+    const k = CORES[i]; const pct = contagens ? (total? Math.round(contagens[i]/total*100):0) : null;
+    let cls = "op"; if(revelar){ if(i===q.c) cls+=" certa"; else if(i===escolha) cls+=" errada-escolha"; else cls+=" apagada"; }
+    const txt = `<span class="txt ${eFormula(o)?'':'plano'}">${eFormula(o)?realca(o):esc(o)}</span>`;
+    const fim = pct!==null ? `<span class="pct">${pct}%</span>` : (revelar && i===q.c ? `<span class="pct" style="color:var(--certo)">✓</span>` : `<span></span>`);
+    const enche = pct!==null ? `<span class="enche" style="width:${pct}%"></span>` : "";
+    const inner = `${enche}<span class="letra">${LETRAS[i]}</span>${txt}${fim}`;
+    if(modo==='votar') return `<button class="${cls}" style="--k:var(${k})" data-op="${i}" aria-pressed="${escolha===i}" ${revelar?'disabled':''}>${inner}</button>`;
+    return `<div class="${cls}" style="--k:var(${k})" role="listitem">${inner}</div>`;
+  }).join("") + `</div>`;
+}
+function explicacao(q, escolha){
+  if(escolha===undefined || escolha===null) return `<div class="explica"><b>Resposta certa: ${LETRAS[q.c]}</b><span>${texto(q.e)}</span></div>`;
+  const ok = escolha===q.c;
+  return `<div class="explica ${ok?'':'mal'}"><b>${ok?'Certo!':'Ainda não. A certa é a '+LETRAS[q.c]+'.'}</b><span>${texto(q.e)}</span></div>`;
+}
+const TIPOS = [...new Set(Q.map(q=>q.t))];
+function lista(nivel, tipo="0"){ const L = Q.filter(q=>(nivel==="0"||String(q.n)===nivel)&&(tipo==="0"||q.t===tipo)); return L.length?L:Q; }
+const optTipos = ()=> `<option value="0">Todos</option>` + TIPOS.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("");
+
+/* ---------- ligação ao vivo (opcional) ---------- */
+let db=null, user=null, meuId=null, podeApresentar=true;
+let estado = {ronda:"local", qid:Q[0].id, fase:"votar", pos:1, total:Q.length, nivel:"0", tipo:"0"}; // fase: votar | resultados | resposta
+let votos = {};          // id → {ronda, r:{qid:op}}
+let meuVoto = {ronda:null, r:{}};
+let aoVivo = false;
+
+async function liga(){
+  try{
+    db = await claude.use("db"); user = await claude.use("user");
+    if(!db) return render();
+    meuId = user ? await user.id() : null;
+    podeApresentar = user ? await user.canEdit() : false;
+    aoVivo = true;
+    db.doc("sessao/estado").onSnapshot(s=>{ if(s.exists){ estado = {...estado, ...s.data()}; } render(); }, ()=>{aoVivo=false;render();});
+    db.collection("votos").onSnapshot(s=>{ votos={}; s.docs.forEach(d=>{ votos[d.id]=d.data(); }); if(meuId && votos[meuId]) meuVoto = votos[meuId]; render(); }, ()=>{});
+  }catch(e){ aoVivo=false; render(); }
+}
+async function gravaEstado(novo){
+  estado = {...estado, ...novo}; render();
+  if(aoVivo && podeApresentar){ try{ await db.doc("sessao/estado").set(estado); }catch(e){ mostraAviso("Não foi possível atualizar o ecrã dos alunos. Verifica se tens permissão de edição."); } }
+}
+function contagens(qid){
+  const c=[0,0,0,0];
+  Object.values(votos).forEach(v=>{ if(v && v.ronda===estado.ronda && v.r && v.r[qid]!==undefined) c[v.r[qid]]++; });
+  return c;
+}
+let avisoTxt = "";
+function mostraAviso(t){ avisoTxt=t; render(); }
+
+/* ---------- vistas ---------- */
+function vInicio(){
+  const n = [1,2,3].map(k=>Q.filter(q=>q.n===k).length);
+  return `<section style="display:flex;flex-direction:column;gap:20px">
+    <h1>Que fórmula usavas?</h1>
+    <p class="lead">${Q.length} perguntas com exemplos das aulas. Escolhes a fórmula certa, completas os parâmetros, dizes o que uma fórmula devolve, o que quer dizer um símbolo ou o que acontece se a escreveres de outra forma.</p>
+    <div class="factos"><div><b>${n[0]}</b>fáceis</div><div><b>${n[1]}</b>médias</div><div><b>${n[2]}</b>difíceis (juntam fórmulas)</div></div>
+    <div class="modos">
+      <a class="modo" href="#apresentar"><span class="tag">Professor</span><h2>Apresentar</h2><p>Mostra a pergunta no projetor, vê as respostas a chegar e revela a certa com a explicação.</p></a>
+      <a class="modo" href="#responder"><span class="tag">Alunos · telemóvel</span><h2>Responder</h2><p>Abre o mesmo link e toca na opção. A pergunta muda sozinha quando o professor avança.</p></a>
+      <a class="modo" href="#estudar"><span class="tag">Treino</span><h2>Estudar sozinho</h2><p>Responde ao teu ritmo e vê logo se acertaste. No fim, vês a tua pontuação por tema.</p></a>
+    </div>
+    ${aoVivo ? "" : `<p class="aviso">A votação ao vivo não está ligada nesta vista. Podes apresentar à mesma e os alunos respondem de braço no ar (A, B, C ou D), ou usar o modo Estudar sozinho.</p>`}
+  </section>`;
+}
+function vApresentar(){
+  if(aoVivo && !podeApresentar) return `<div class="vazio"><h2>Só o professor pode apresentar</h2><p class="lead">Escolhe <a href="#responder">Responder</a> para participar.</p></div>`;
+  const L = lista(estado.nivel, estado.tipo); let i = L.findIndex(q=>q.id===estado.qid); if(i<0) i=0;
+  const q = L[i]; const cont = aoVivo ? contagens(q.id) : null; const tot = cont? cont.reduce((a,b)=>a+b,0):0;
+  const mostrarRes = estado.fase!=="votar";
+  return `<section style="display:flex;flex-direction:column;gap:18px">
+    ${cabecalho(q,i+1,L.length)}
+    <div class="slide">
+      <div class="perg"><h2>${texto(q.p)}</h2>${folha(q)}</div>
+      <div class="perg">
+        ${opcoes(q,{modo:'ver', contagens: (aoVivo && mostrarRes)? cont : null, revelar: estado.fase==="resposta"})}
+        ${estado.fase==="resposta" ? explicacao(q) : ""}
+      </div>
+    </div>
+    ${avisoTxt?`<p class="aviso">${esc(avisoTxt)}</p>`:""}
+    <div class="controlos">
+      <div class="grupo">
+        <button class="btn" id="ant" ${i===0?'disabled':''}>← Anterior</button>
+        <button class="btn" id="seg" ${i===L.length-1?'disabled':''}>Seguinte →</button>
+        <label class="grupo" style="font-size:15px;color:var(--muted)">Nível
+          <select id="nivel"><option value="0">Todos</option><option value="1">Fácil</option><option value="2">Médio</option><option value="3">Difícil</option></select></label>
+        <label class="grupo" style="font-size:15px;color:var(--muted)">Tipo <select id="tipo">${optTipos()}</select></label>
+      </div>
+      <div class="grupo">
+        ${aoVivo ? `<span class="conta" title="Respostas recebidas">${tot}</span><span style="color:var(--muted);font-size:15px">respostas</span>
+          <button class="btn" id="res" ${estado.fase!=="votar"?'disabled':''}>Mostrar resultados</button>` : `<span style="color:var(--muted);font-size:15px">Votação de braço no ar</span>`}
+        <button class="btn prim" id="rev" ${estado.fase==="resposta"?'disabled':''}>Revelar resposta</button>
+        ${aoVivo ? `<button class="btn" id="nova" title="Apaga as respostas da sessão anterior do ecrã">Nova sessão</button>`:""}
+      </div>
+    </div>
+  </section>`;
+}
+function ligaApresentar(){
+  const L = lista(estado.nivel, estado.tipo); let i = Math.max(0,L.findIndex(q=>q.id===estado.qid));
+  const vai = j => gravaEstado({qid:L[j].id, fase:"votar", pos:j+1, total:L.length});
+  const sel = document.getElementById("nivel"); if(sel){ sel.value = estado.nivel;
+    sel.onchange = ()=>{ const L2 = lista(sel.value, estado.tipo); gravaEstado({nivel:sel.value, qid:L2[0].id, fase:"votar", pos:1, total:L2.length}); }; }
+  const st = document.getElementById("tipo"); if(st){ st.value = estado.tipo||"0";
+    st.onchange = ()=>{ const L2 = lista(estado.nivel, st.value); gravaEstado({tipo:st.value, qid:L2[0].id, fase:"votar", pos:1, total:L2.length}); }; }
+  const b = id=>document.getElementById(id);
+  if(b("ant")) b("ant").onclick = ()=> i>0 && vai(i-1);
+  if(b("seg")) b("seg").onclick = ()=> i<L.length-1 && vai(i+1);
+  if(b("res")) b("res").onclick = ()=> gravaEstado({fase:"resultados"});
+  if(b("rev")) b("rev").onclick = ()=> gravaEstado({fase:"resposta"});
+  if(b("nova")) b("nova").onclick = ()=>{ const L2=lista(estado.nivel, estado.tipo); gravaEstado({ronda:"r"+Date.now().toString(36), qid:L2[0].id, fase:"votar", pos:1, total:L2.length}); };
+}
+document.addEventListener("keydown",e=>{
+  if(location.hash!=="#apresentar" || e.target.closest("select")) return;
+  if(e.key==="ArrowRight") document.getElementById("seg")?.click();
+  if(e.key==="ArrowLeft") document.getElementById("ant")?.click();
+  if(e.key===" "||e.key==="Enter"){ if(e.target.tagName!=="BUTTON"){ e.preventDefault(); const r=document.getElementById("res"); (r && !r.disabled ? r : document.getElementById("rev"))?.click(); } }
+});
+
+let enviando=false;
+function vResponder(){
+  if(!aoVivo) return `<div class="vazio"><div class="relogio">A · B · C · D</div><h2>Votação ao vivo indisponível</h2>
+    <p class="lead">Nesta vista não é possível enviar respostas. Responde de braço no ar ou treina no modo <a href="#estudar">Estudar sozinho</a>.</p></div>`;
+  const q = Q.find(x=>x.id===estado.qid) || Q[0];
+  const minha = meuVoto.ronda===estado.ronda ? meuVoto.r?.[q.id] : undefined;
+  const revelar = estado.fase==="resposta";
+  return `<section style="display:flex;flex-direction:column;gap:16px">
+    ${cabecalho(q,estado.pos||1,estado.total||Q.length)}
+    <div class="perg"><h2>${texto(q.p)}</h2>${folha(q)}</div>
+    ${opcoes(q,{modo:'votar', escolha: minha===undefined?null:minha, revelar})}
+    ${revelar ? explicacao(q, minha===undefined?null:minha) :
+      `<p class="aviso">${minha===undefined ? "Toca numa opção para responder." : "Resposta enviada: <b>"+LETRAS[minha]+"</b>. Podes mudar até o professor revelar."}</p>`}
+    ${avisoTxt?`<p class="aviso">${esc(avisoTxt)}</p>`:""}
+  </section>`;
+}
+function ligaResponder(){
+  document.querySelectorAll("button.op").forEach(btn=>btn.onclick = async ()=>{
+    if(enviando || !meuId) { if(!meuId) mostraAviso("Entra na tua conta para poder responder."); return; }
+    const op = +btn.dataset.op; const r = meuVoto.ronda===estado.ronda ? {...meuVoto.r} : {};
+    r[estado.qid] = op; meuVoto = {ronda:estado.ronda, r}; avisoTxt=""; render(); enviando=true;
+    try{ await db.doc("votos/"+meuId).set(meuVoto); }
+    catch(e){ mostraAviso("A resposta não foi enviada. Pede ao professor acesso para participar neste quiz."); }
+    enviando=false;
+  });
+}
+
+let estudo = null;
+function novoEstudo(nivel, tipo="0"){ estudo = {nivel, tipo, L: lista(nivel, tipo).map(q=>q.id), i:0, resp:{}}; }
+function vEstudar(){
+  if(!estudo) novoEstudo("0");
+  if(estudo.i >= estudo.L.length){
+    const certas = estudo.L.filter(id=>estudo.resp[id]===Q.find(q=>q.id===id).c).length;
+    const temas = {}; estudo.L.forEach(id=>{ const q=Q.find(x=>x.id===id); temas[q.tema]=temas[q.tema]||[0,0]; temas[q.tema][1]++; if(estudo.resp[id]===q.c) temas[q.tema][0]++; });
+    return `<section class="final"><span class="chip">Terminaste</span><div class="grande">${certas}/${estudo.L.length}</div>
+      <p class="lead">${certas===estudo.L.length?"Acertaste todas!": certas/estudo.L.length>=.7?"Muito bem. Revê os temas com menos pontos.":"Continua a treinar. Revê os temas com menos pontos no resumo de fórmulas."}</p>
+      <div class="lista-temas">${Object.entries(temas).map(([t,[a,n]])=>`<div><span>${esc(t)}</span><b style="font-variant-numeric:tabular-nums">${a}/${n}</b></div>`).join("")}</div>
+      <button class="btn prim" id="denovo">Começar outra vez</button></section>`;
+  }
+  const q = Q.find(x=>x.id===estudo.L[estudo.i]); const e = estudo.resp[q.id]; const feito = e!==undefined;
+  return `<section style="display:flex;flex-direction:column;gap:16px">
+    <div class="grupo"><label class="grupo" style="font-size:15px;color:var(--muted)">Nível
+      <select id="enivel"><option value="0">Todos</option><option value="1">Fácil</option><option value="2">Médio</option><option value="3">Difícil</option></select></label>
+      <label class="grupo" style="font-size:15px;color:var(--muted)">Tipo <select id="etipo">${optTipos()}</select></label></div>
+    ${cabecalho(q,estudo.i+1,estudo.L.length)}
+    <div class="slide"><div class="perg"><h2>${texto(q.p)}</h2>${folha(q)}</div>
+      <div class="perg">${opcoes(q,{modo:'votar', escolha: feito?e:null, revelar:feito})}${feito?explicacao(q,e):""}
+      ${feito?`<div class="grupo"><button class="btn prim" id="eseg">${estudo.i===estudo.L.length-1?"Ver resultado":"Seguinte →"}</button></div>`:""}</div></div>
+  </section>`;
+}
+function ligaEstudar(){
+  const d = id=>document.getElementById(id);
+  if(d("denovo")) return d("denovo").onclick = ()=>{ novoEstudo(estudo.nivel, estudo.tipo); render(); };
+  const s = d("enivel"); s.value = estudo.nivel; s.onchange = ()=>{ novoEstudo(s.value, estudo.tipo); render(); };
+  const t = d("etipo"); t.value = estudo.tipo; t.onchange = ()=>{ novoEstudo(estudo.nivel, t.value); render(); };
+  document.querySelectorAll("button.op").forEach(b=>b.onclick=()=>{ const id=estudo.L[estudo.i]; if(estudo.resp[id]!==undefined) return; estudo.resp[id]=+b.dataset.op; render(); d("eseg")?.focus(); });
+  if(d("eseg")) d("eseg").onclick = ()=>{ estudo.i++; render(); window.scrollTo({top:0}); };
+}
+
+function vista(){ const h = location.hash.replace("#",""); return ["apresentar","responder","estudar"].includes(h)?h:"inicio"; }
+function render(){
+  const v = vista();
+  document.querySelectorAll(".nav a").forEach(a=>a.setAttribute("aria-current", a.dataset.v===v?"page":"false"));
+  const foco = document.activeElement && document.activeElement.id;
+  app.innerHTML = v==="apresentar"? vApresentar() : v==="responder"? vResponder() : v==="estudar"? vEstudar() : vInicio();
+  if(v==="apresentar") ligaApresentar(); if(v==="responder") ligaResponder(); if(v==="estudar") ligaEstudar();
+  if(foco && document.getElementById(foco)) document.getElementById(foco).focus({preventScroll:true});
+}
+window.addEventListener("hashchange",()=>{ avisoTxt=""; render(); });
+render(); liga();
+</script>
+
+</body>
+</html>
